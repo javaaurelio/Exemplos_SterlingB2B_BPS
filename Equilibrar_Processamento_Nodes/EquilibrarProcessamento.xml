@@ -1,0 +1,29 @@
+<process name="EquilibrarProcessamento">
+  <sequence>
+    <operation name="LightweightJDBCAdapterType">
+      <participant name="LightweightJDBCAdapterQuery"/>
+      <output message="LightweightJDBCAdapterTypeInputMessage">
+        <assign to="result_name">resultado</assign>
+        <assign to="sql">select NODEEXECUTED , count (*) as qtd from WORKFLOW_CONTEXT wc where 1=1 and step_id = 0 and NODEEXECUTED  like '%1%' group by NODEEXECUTED</assign>
+        <assign to="pool">mssqlPool</assign>
+        <assign to="row_name">linha</assign>
+        <assign to="query_type">SELECT</assign>
+        <assign to="." from="*"></assign>
+      </output>
+      <input message="inmsg">
+        <assign to="." from="*"></assign>
+      </input>
+    </operation>
+	
+	<assign name="Assign" to="node1Valor" from="sum(/resultado/linha[ NODEEXECUTED[contains(text(), 'node1')]]/qtd/text())"></assign>
+
+		<assign name="Assign" to="node2Valor" from="sum(/resultado/linha[ NODEEXECUTED[contains(text(), 'node2')]]/qtd/text())"></assign>
+	<assign name="Assign" to="total" from="//node1Valor/text() + //node2Valor/text()"></assign>
+	
+	<assign name="Assign" to="NODE_SELECIONADO" from="if ((number(/resultado/linha/node1Valor) div number(/resultado/linha/total) * 100) &lt; number(50), 'node1', 'node2')"></assign>
+	
+	
+	<assign name="Assign" to="sciGlobalProcessBPID" from="sci-set-property('preferenceNode', //NODE_SELECIONADO/text())"></assign>
+	
+  </sequence>
+</process>

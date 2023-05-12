@@ -1,0 +1,8 @@
+<process name="Exemplo_Obter_CacheProperties">
+  <sequence>
+    
+	
+	<assign to="preferredNode" from="sci-get-property('sciGlobalProcess','preferenceNode')"></assign>
+	
+  </sequence>
+</process>
