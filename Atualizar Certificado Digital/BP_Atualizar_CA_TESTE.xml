@@ -1,0 +1,154 @@
+<process name = "BP_Atualizar_CA_TESTE">
+	<rule name="Verifica ID">
+		<condition>count(/ProcessData/RoutingRequest/RoutingRequest/MessageId) &gt;= 1</condition>
+	</rule>
+	<sequence name="Sequence Start">
+		<choice name="EXISTE_ARQUIVO">
+			<select>
+				<case ref="Verifica ID" activity="SIM_EXISTE"/>
+			</select>
+			<sequence name="SIM_EXISTE">
+				<operation name="Mailbox Extract Begin Service">
+					<participant name="MailboxExtractBegin"/>
+					<output message="MailboxExtractBeginServiceTypeInputMessage">
+						<assign to="." from="*"></assign>
+						<assign to="CommitNow">YES</assign>
+						<assign to="MessageId" from="string(/ProcessData/RoutingRequest/RoutingRequest/MessageId[1])"></assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"></assign>
+					</input>
+				</operation>
+				<assign to="NomeCertificado" from="substring-before(MessageName/text(), '.')"></assign>
+				<assign to="Certificado" from="PrimaryDocument/@SCIObjectID"></assign>
+
+
+    <operation name="This Service">
+      <participant name="This"/>
+      <output message="timeRequest">
+        <assign to="format">dd-MM-yyyy_HH:mm:ss</assign>
+      </output>
+      <input message="inmsg">
+        <assign to="timestamp" from="time"></assign>
+      </input>
+    </operation>
+
+
+
+				<operation name="LightweightJDBCAdapterType">
+					<participant name="LightweightJDBCAdapterQuery"/>
+					<output message="LightweightJDBCAdapterTypeInputMessage">
+						<assign to="result_name">result</assign>
+						<assign to="sql">update CA_CERT_INFO set NAME = ? where NAME = ? </assign>
+						<assign to="pool">mssqlPool</assign>
+						<assign to="row_name">row</assign>
+						<assign to="param1" from="concat(NomeCertificado/text(),'_',timestamp/time/text(), '_DESLIGADO')" />
+						<assign to="paramtype1">String</assign>
+						<assign to="param2" from="NomeCertificado/text()" />
+						<assign to="paramtype2">String</assign>
+						<assign to="query_type">update</assign>
+						<assign to="." from="*"></assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"></assign>
+					</input>
+				</operation>
+				<assign to="PrimaryDocument" from="Certificado/@SCIObjectID"></assign>
+				<assign name="Assign" to="prefix_root">&lt;root&gt;</assign>
+				<assign name="Assign" to="suffix_root">&lt;/root&gt;</assign>
+				<operation name="BatchProcessor">
+					<participant name="BatchProcessorService"/>
+					<output message="BatchProcessorInputMessage">
+						<assign to="." from="*"></assign>
+						<assign to="prefix_document">prefix_root</assign>
+						<assign to="suffix_document">PrimaryDocument</assign>
+						<assign to="use_xml">false</assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"></assign>
+					</input>
+				</operation>
+				<operation name="BatchProcessor">
+					<participant name="BatchProcessorService"/>
+					<output message="BatchProcessorInputMessage">
+						<assign to="." from="*"></assign>
+						<assign to="prefix_document">PrimaryDocument</assign>
+						<assign to="suffix_document">suffix_root</assign>
+						<assign to="use_xml">false</assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"></assign>
+					</input>
+				</operation>
+				<assign to="doc" from="DocToDOM(PrimaryDocument)"></assign>
+				<operation name="XSLT Service">
+					<participant name="XSLTService"/>
+					<output message="XSLTServiceTypeInputMessage">
+						<assign to="." from="*"/>
+						<assign to="xml_input_from">PrimaryDoc</assign>
+						<assign to="xslt_name">XAPI_manageCertificate_Parse_XSLT_TESTE</assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"/>
+					</input>
+				</operation>
+				<operation name="XAPI Service">
+					<participant name="XAPIService"/>
+					<output message="XAPIServiceTypeInputMessage">
+						<assign to="." from="*"></assign>
+						<assign to="api">manageCertificate</assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"></assign>
+					</input>
+				</operation>
+				<operation name="XSLT Service">
+					<participant name="XSLTService"/>
+					<output message="XSLTServiceTypeInputMessage">
+						<assign to="." from="*"/>
+						<assign to="additional_xslt_params" from="concat('nomeCert=', /ProcessData/NomeCertificado/text())"/>
+						<assign to="xml_input_from">PrimaryDoc</assign>
+						<assign to="xslt_name">XAPI_manageCertificate_Create_XSLT_TESTE</assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"/>
+					</input>
+				</operation>
+				<operation name="XAPI Service">
+					<participant name="XAPIService"/>
+					<output message="XAPIServiceTypeInputMessage">
+						<assign to="." from="*"></assign>
+						<assign to="api">manageCertificate</assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"></assign>
+					</input>
+				</operation>
+
+       <operation name="Mailbox Delete Service">
+          <participant name="MailboxDelete"/>
+          <output message="DeleteRequest">
+             <assign to="." from="*"></assign>
+             <assign to="MessageId" from="/ProcessData/RoutingRequest/RoutingRequest/MessageId[1]"></assign>
+          </output>
+           <input message="inmsg">
+               <assign to="DeleteResults" from="*"></assign>
+          </input>
+       </operation>
+
+
+				<operation name="Release Service">
+					<participant name="ReleaseService"/>
+					<output message="ReleaseServiceTypeInputMessage">
+						<assign to="." from="*"></assign>
+						<assign to="TARGET">/ProcessData/RoutingRequest/RoutingRequest/MessageId[1]|message_to_child</assign>
+					</output>
+					<input message="inmsg">
+						<assign to="." from="*"></assign>
+					</input>
+				</operation>
+				<repeat name="Repeat" ref="EXISTE_ARQUIVO"/>
+			</sequence>
+		</choice>
+	</sequence>
+</process>
