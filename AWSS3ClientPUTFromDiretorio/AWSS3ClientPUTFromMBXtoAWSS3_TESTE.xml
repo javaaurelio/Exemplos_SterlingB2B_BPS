@@ -1,0 +1,29 @@
+<process name = "AWSS3ClientPUTFromMBXtoAWSS3_TESTE"> 
+  <sequence>
+
+<!--      dir-b2b/bin./encrypt_string.sh "senha". Saida do sh gerar o obscuredaccesskey sem o OBSCU..: -->
+		
+        <operation name="AWSS3 Put file From mailbox to AWSS3">
+		  <participant name="AWSS3Client"/>
+		  <output message="xout">
+			<assign to="action">put</assign>
+			<assign to="awss3.bucketname" from="/ProcessData/bucket/text()"></assign>
+			 
+                          <assign to="source.path" from="/ProcessData/dir/text()"></assign>
+								      
+                        <assign to="awss3.obscuredaccesskey" from="">rO0ABXQABkRFU2VkZXVyAAJbQqzzF/gGCFTgAgAAeHAAAAAIfpzUCfgbY/dzcgARamF2YS5sYW5nLkludGVnZXIS4qCk94GHOAIAAUkABXZhbHVleHIAEGphdmEubGFuZy5OdW1iZXKGrJUdC5TgiwIAAHhwAAAAZXVxAH4AAQAAABhe8IockblbwsuCbXZRC3iZ1nVN+HYd0ZY=</assign>
+			            <assign to="awss3.obscuredsecretkey" from="">rO0ABXQABkRFU2VkZXVyAAJbQqzzF/gGCFTgAgAAeHAAAAAI9IzfMdh0jPdzcgARamF2YS5sYW5nLkludGVnZXIS4qCk94GHOAIAAUkABXZhbHVleHIAEGphdmEubGFuZy5OdW1iZXKGrJUdC5TgiwIAAHhwAAAAZXVxAH4AAQAAADADyUi7xrJ005VMbZJ5fAdO3oDfD5Vz+gmr99x1FYTkezRvZ87wP4xmiGgixJFZaAY=</assign>
+
+
+			<assign to="awss3.endpoint" from="string('192.168.252.5')"></assign>
+			<assign to="awss3.region" from="string('TESTE')"></assign>
+			<assign to="awss3.port" from="string('443')"></assign>		
+
+			
+		  </output>
+		  <input message="xin">
+			<assign to="." from="*"></assign>
+		  </input>
+		</operation>
+  </sequence>
+</process>
