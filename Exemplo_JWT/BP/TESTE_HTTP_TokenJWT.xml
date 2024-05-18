@@ -1,0 +1,83 @@
+<process name = "TESTE_HTTP_TokenJWT"> 
+  <sequence>
+    <operation name="This Service">
+      <participant name="This"/>
+      <output message="giveDocumentRequest">
+        <assign to="." from="*"></assign>
+        <assign to="documentKey" from="&apos;PrimaryDocument&apos;"></assign>
+      </output>
+      <input message="inmsg">
+        <assign to="documentID_request" from="documentId/text()"></assign>
+      </input>
+    </operation>
+
+
+<assign to="chavePrivada">/tmp/pk_rsa.pem</assign>
+<assign to="certificado">/tmp/pub_rsa.pem</assign>
+
+
+
+    <operation name="MIME Service">
+      <participant name="MIME"/>
+      <output message="crackRequest">
+        <assign to="." from="*"></assign>
+        <assign to="mime-document-id/doc:document-id" from="documentID_request/text()" append="true"></assign>
+      </output>
+      <input message="inmsg">
+        <assign to="." from="*"></assign>
+      </input>
+    </operation>
+	
+
+<assign to="token-header" from="//mime-document/mime:message/mime:header[@name='authorization']/text()"></assign>
+	
+	<operation name="JavaTaskSample">
+	<participant name="JavaTask"/>
+	<output message="Xout" >
+	<assign to="srcLocationMode">inline</assign>
+	<assign to="javaSrc">
+	
+	
+	String token_header = (String)wfc.getWFContent("token-header");
+	String chavePrivada = (String)wfc.getWFContent("chavePrivada");
+	String certificado = (String)wfc.getWFContent("certificado");
+	boolean valido = br.com.cliente.ValidarToken.validarToken(token_header, certificado, chavePrivada);
+
+
+
+if (valido ) {
+    wfc.addWFContent("TOKEN-VALIDO", "OK");
+    System.out.println("=======OK=======");
+    return "OK";
+} else {  
+
+    wfc.addWFContent("TOKEN-VALIDO", "NOK");
+    System.out.println("=======NAO=OK=======");
+    return "NOK";
+}
+	
+
+	</assign>
+	<assign to="." from="*"></assign>
+	</output>
+	<input message="Xin" >
+	<assign to="." from="*"></assign>
+	</input>
+</operation>
+	
+	
+
+    <operation name="HTTP Respond Service">
+      <participant name="HttpRespond"/>
+      <output message="HttpRespondServiceInputMessage">
+        <assign to="doc-has-headers">false</assign>
+        <assign to="status-code" from="if( contains(TOKEN-VALIDO/text(),'NOK'), '401' , '200')"></assign>
+        <assign to="." from="*"></assign>
+      </output>
+      <input message="inmsg">
+        <assign to="." from="*"></assign>
+      </input>
+    </operation>
+
+  </sequence>
+</process>
